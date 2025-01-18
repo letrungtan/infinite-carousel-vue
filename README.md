@@ -2,12 +2,12 @@
 
 A flexible, lightweight, touch & wipe support carousel library for Vue, supporting infinite loop mode.
 
-<img src="https://raw.githubusercontent.com/letrungtan/infinite-carousel-vue/assets/t-carousel.png" width="335" />
+<img src="https://raw.githubusercontent.com/letrungtan/infinite-carousel-vue/refs/heads/main/src/assets/t-carousel.png" width="335" />
 
 ## Installation
 ### NPM
 ```js
-$ npm install @letrungtan/infinite-carousel-vue
+$ npm i @letrungtan/infinite-carousel-vue
 ```
 Use the component.
 ```js
@@ -17,7 +17,7 @@ import { InfiniteCarousel, Slide } from '@letrungtan/infinite-carousel-vue'
 
 **Basic Usage**
 ```html
-<<InfiniteCarousel 
+<InfiniteCarousel 
     :itemPerSlide="1"
     :itemPerMove="1"
     :infinite="true"
@@ -35,7 +35,7 @@ import { InfiniteCarousel, Slide } from '@letrungtan/infinite-carousel-vue'
 ## API
 
 | Name | Type | Default | Description |
-| :---------------- | :--------- | :-------------------------------- |
+| :---------------- | :--------- | :----- | :-------------------------------- |
 | `itemPerSlide`    | `Number`   | 1      | The number of items to show per slide.  |
 | `itemPerMove`     | `Number`   | 1      | The number of items to move per slide when navigating.  |
 | `duration`        | `Number`   | 500    | The duration of the transition in milliseconds.  |
