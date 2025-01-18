@@ -1,0 +1,32 @@
+{
+  "name": "infinite-carousel-vue",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "main": "dist/infinite-carousel-vue.es.js",
+  "module": "dist/infinite-carousel-vue.es.js",
+  "keywords": [
+    "vue",
+    "carousel",
+    "infinite-carousel-vue"
+  ],
+  "author": "Le Trung Tan",
+  "license": "MIT",
+  "scripts": {
+    "dev": "vite",
+    "build": "vue-tsc -b && vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "vue": "^3.5.13"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^5.2.1",
+    "@vue/tsconfig": "^0.7.0",
+    "sass-embedded": "^1.83.4",
+    "typescript": "~5.6.2",
+    "vite": "^6.0.5",
+    "vite-plugin-libcss": "^1.1.1",
+    "vue-tsc": "^2.2.0"
+  }
+}
