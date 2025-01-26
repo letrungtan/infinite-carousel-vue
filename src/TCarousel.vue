@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, nextTick, onMounted, onUnmounted, reactive, useSlots, useTemplateRef } from 'vue';
+import { computed, nextTick, onMounted, onUnmounted, reactive, useSlots, useTemplateRef, watch } from 'vue';
 import { chevronUp } from './assets/icons.ts'
 
 const slots = useSlots();
@@ -59,6 +59,9 @@ const props = defineProps({
     default: 'forward'
   }
 })
+
+const emit = defineEmits(['itemChange', 'slideChange'])
+
 const viewportRef = useTemplateRef('viewportRef')
 
 const state = reactive({
@@ -253,6 +256,14 @@ const onTouchStart = (event: any) => {
   touchStartPosition = event.touches[0].clientX
   window.addEventListener('touchmove', onTouchMove)
 }
+
+watch(() => state.currentItem, (to) => {
+  emit('itemChange', to)
+})
+
+watch(currentSlide, (to) => {
+  emit('slideChange', to)
+})
 
 onMounted(async () => {
   if (viewportRef?.value) {

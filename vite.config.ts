@@ -8,7 +8,7 @@ export default defineConfig({
   build: {
     lib: {
       entry: 'src/index.js',
-      name: 'VueInfiniteCarousel',
+      name: 'InfiniteCarouselVue',
       fileName: (format) => `infinite-carousel-vue.${format}.js`
     },
     rollupOptions: {

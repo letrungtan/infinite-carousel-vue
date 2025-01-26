@@ -1,10 +1,11 @@
 {
   "name": "infinite-carousel-vue",
   "private": false,
-  "version": "1.0.1",
+  "version": "1.0.3",
   "type": "module",
   "main": "dist/infinite-carousel-vue.es.js",
   "module": "dist/infinite-carousel-vue.es.js",
+  "style": "dist/index.css",
   "keywords": [
     "vue",
     "carousel",
