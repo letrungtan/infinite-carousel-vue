@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, nextTick, onMounted, reactive, useSlots, useTemplateRef } from 'vue';
+import { computed, nextTick, onMounted, onUnmounted, reactive, useSlots, useTemplateRef } from 'vue';
 import { chevronUp } from './assets/icons.ts'
 
 const slots = useSlots();
@@ -45,6 +45,18 @@ const props = defineProps({
   noBoundaries: {
     type: Boolean,
     default: false
+  },
+  autoplay: {
+    type: Boolean,
+    default: false
+  },
+  autoplayInterval: {
+    type: Number,
+    default: 2000
+  },
+  autoplayDirection: {
+    type: String,
+    default: 'forward'
   }
 })
 const viewportRef = useTemplateRef('viewportRef')
@@ -55,7 +67,8 @@ const state = reactive({
   disableTransition: true,
   sliding: false,
   translateXOnTouch: 0,
-  chevronUp
+  chevronUp,
+  autoplayInterval: 0
 })
 let transitionEndPromiseResolver = (_?: unknown) => {}
 
@@ -82,7 +95,8 @@ const onTransitionEnd = () => {
 
 const itemStyle = computed(() => {
   return {
-    minWidth: `${100 / props.itemPerSlide}%`
+    minWidth: `${100 / props.itemPerSlide}%`,
+    maxWidth: `${100 / props.itemPerSlide}%`
   }
 })
 
@@ -241,18 +255,29 @@ const onTouchStart = (event: any) => {
 }
 
 onMounted(async () => {
-  state.viewportWidth = viewportRef?.value?.clientWidth || 0
+  if (viewportRef?.value) {
+    state.viewportWidth = viewportRef.value?.getBoundingClientRect().width
+  }
   await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)))
   state.disableTransition = false
   if (viewportRef.value) {
     const resizeObserver = new ResizeObserver((entries) => {
       for (const entry of entries) {
-        state.viewportWidth =entry.target.clientWidth
+        state.viewportWidth =entry.target?.getBoundingClientRect().width
       }
     });
     resizeObserver.observe(viewportRef.value);
   }
   window.addEventListener('touchstart', onTouchStart)
+  if (props.autoplay) {
+    state.autoplayInterval = setInterval(() => {
+      props.autoplayDirection === 'forward' ? next() : prev()
+    }, props.autoplayInterval)
+  }
+})
+
+onUnmounted(() => {
+  clearInterval(state.autoplayInterval)
 })
 
 </script>
@@ -356,9 +381,11 @@ onMounted(async () => {
       will-change: transform;
       max-height: 100%;
       min-width: 100%;
+      max-width: 100%;
     }
     &-item {
-      min-width: 100%;
+      // min-width: 100%;
+      // max-width: 100%;
       display: flex;
       flex-direction: column;
       align-items: center;
