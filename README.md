@@ -11,7 +11,7 @@ $ npm i infinite-carousel-vue
 ```
 Use the component.
 ```js
-import { InfiniteCarousel, Slide } from '@letrungtan/infinite-carousel-vue'
+import { InfiniteCarousel, Slide } from 'infinite-carousel-vue'
 ```
 ## Usage
 
