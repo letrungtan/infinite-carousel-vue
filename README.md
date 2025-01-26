@@ -7,11 +7,11 @@ A flexible, lightweight, touch & wipe support carousel library for Vue, supporti
 ## Installation
 ### NPM
 ```js
-$ npm i @letrungtan/infinite-carousel-vue
+$ npm i infinite-carousel-vue
 ```
 Use the component.
 ```js
-import { InfiniteCarousel, Slide } from '@letrungtan/infinite-carousel-vue'
+import { InfiniteCarousel, Slide } from 'infinite-carousel-vue'
 ```
 ## Usage
 
