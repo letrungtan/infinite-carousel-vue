@@ -1,296 +1,260 @@
 <script setup lang="ts">
-import { computed, nextTick, onMounted, onUnmounted, reactive, useSlots, useTemplateRef, watch } from 'vue';
-import { chevronUp } from './assets/icons.ts'
+import { computed, nextTick, onMounted, onUnmounted, reactive, useSlots, ref, watch, type Slots, type VNode } from 'vue';
+import { chevronUp } from './assets/icons.ts';
 
-const slots = useSlots();
-// @ts-ignore
-const slotsDefault = slots?.default?.() || []
-const fgt = slotsDefault.find((item: any )=> item.type.toString() === 'Symbol(v-fgt)')
-const list = fgt && fgt?.children ? fgt.children : slotsDefault
-console.log('list', list);
+// Define the props with TypeScript interfaces
+interface Props {
+  itemPerSlide?: number;
+  itemPerMove?: number;
+  duration?: number;
+  className?: string;
+  showPagination?: boolean;
+  showNavigation?: boolean;
+  infinite?: boolean;
+  infiniteOnWipe?: boolean;
+  noBoundaries?: boolean;
+  autoplay?: boolean;
+  autoplayInterval?: number;
+  autoplayDirection?: 'forward' | 'backward';
+}
 
-const props = defineProps({
-  itemPerSlide: {
-    type: Number,
-    default: 1
-  },
-  itemPerMove: {
-    type: Number,
-    default: 1
-  },
-  duration: {
-    type: Number,
-    default: 500
-  },
-  className: {
-    type: String,
-    default: ''
-  },
-  showPagination: {
-    type: Boolean,
-    default: true
-  },
-  showNavigation: {
-    type: Boolean,
-    default: true
-  },
-  infinite: {
-    type: Boolean,
-    default: true
-  },
-  infiniteOnWipe: {
-    type: Boolean,
-    default: false
-  },
-  noBoundaries: {
-    type: Boolean,
-    default: false
-  },
-  autoplay: {
-    type: Boolean,
-    default: false
-  },
-  autoplayInterval: {
-    type: Number,
-    default: 2000
-  },
-  autoplayDirection: {
-    type: String,
-    default: 'forward'
-  }
-})
+const props = withDefaults(defineProps<Props>(), {
+  itemPerSlide: 1,
+  itemPerMove: 1,
+  duration: 500,
+  className: '',
+  showPagination: true,
+  showNavigation: true,
+  infinite: true,
+  infiniteOnWipe: false,
+  noBoundaries: false,
+  autoplay: false,
+  autoplayInterval: 2000,
+  autoplayDirection: 'forward',
+});
 
-const emit = defineEmits(['itemChange', 'slideChange'])
+const emit = defineEmits<{
+  (event: 'itemChange', value: number): void;
+  (event: 'slideChange', value: number): void;
+}>();
 
-const viewportRef = useTemplateRef('viewportRef')
+const slots: Slots = useSlots();
+const slotsDefault: VNode[] = slots?.default?.() || [];
+const fgt: VNode | undefined = slotsDefault.find((item: VNode) => item.type.toString() === 'Symbol(v-fgt)');
+const list: VNode[] = fgt && fgt.children ? (fgt.children as VNode[]) : slotsDefault;
 
-const state = reactive({
+const viewportRef = ref<HTMLElement | null>(null);
+
+interface State {
+  currentItem: number;
+  viewportWidth: number;
+  disableTransition: boolean;
+  sliding: boolean;
+  translateXOnTouch: number;
+  autoplayInterval: number;
+}
+
+const state = reactive<State>({
   currentItem: 0,
   viewportWidth: 0,
   disableTransition: true,
   sliding: false,
   translateXOnTouch: 0,
-  chevronUp,
-  autoplayInterval: 0
-})
-let transitionEndPromiseResolver = (_?: unknown) => {}
+  autoplayInterval: 0,
+});
 
+let transitionEndPromiseResolver: (value: void | PromiseLike<void>) => void
+
+// Computed properties
 const currentSlide = computed({
-  get () {
-    return Math.ceil(state.currentItem / props.itemPerSlide)
+  get(): number {
+    return Math.ceil(state.currentItem / props.itemPerSlide);
   },
-  set (value) {
-    state.currentItem = value * props.itemPerSlide
-  }
-})
+  set(value: number) {
+    state.currentItem = value * props.itemPerSlide;
+  },
+});
 
-const trackStyle = computed(() => {  
-  const translateX = - ( state.currentItem + totalClone.value) * ( state.viewportWidth / props.itemPerSlide ) + state.translateXOnTouch
+const trackStyle = computed(() => {
+  const translateX = -(state.currentItem + totalClone.value) * (state.viewportWidth / props.itemPerSlide) + state.translateXOnTouch;
   return {
     transform: `translate3D(${translateX}px, 0, 0)`,
-    transition: state.disableTransition ? 'none' : `${props.duration / 1000}s`
-  }
-})
+    transition: state.disableTransition ? 'none' : `${props.duration / 1000}s`,
+  };
+});
 
 const onTransitionEnd = () => {
-  transitionEndPromiseResolver?.()  
-}
+  transitionEndPromiseResolver?.();
+};
 
-const itemStyle = computed(() => {
-  return {
-    minWidth: `${100 / props.itemPerSlide}%`,
-    maxWidth: `${100 / props.itemPerSlide}%`
-  }
-})
+const itemStyle = computed(() => ({
+  minWidth: `${100 / props.itemPerSlide}%`,
+  maxWidth: `${100 / props.itemPerSlide}%`,
+}));
 
-const totalItem = computed(() => list.length)
-const totalSlide = computed(() => Math.ceil(list.length / props.itemPerSlide))
-const totalClone = computed(() => props.itemPerMove * ( Math.ceil(props.itemPerSlide / props.itemPerMove )))
-const isBlockPrev = computed(() => !props.infinite && state.currentItem <= 0)
-const isBlockNext = computed(() => !props.infinite && state.currentItem >= totalItem.value - props.itemPerSlide )
-// console.log('totalClone', totalClone.value);
+const totalItem = computed(() => list.length);
+const totalSlide = computed(() => Math.ceil(list.length / props.itemPerSlide));
+const totalClone = computed(() => props.itemPerMove * Math.ceil(props.itemPerSlide / props.itemPerMove));
+const isBlockPrev = computed(() => !props.infinite && state.currentItem <= 0);
+const isBlockNext = computed(() => !props.infinite && state.currentItem >= totalItem.value - props.itemPerSlide);
 
+// Methods
+const prev = async (forceSlide?: boolean, noInfinite?: boolean): Promise<void> => {
+  if ((state.sliding && !forceSlide) || isBlockPrev.value) return;
 
-const prev = async (forceSlide?: boolean, noInfinite?: boolean) => {
-  if (
-    state.sliding && !forceSlide
-    || isBlockPrev.value
-  ) {
-    return
-  }
   if (state.currentItem > -props.itemPerSlide) {
-    if (
-      !props.noBoundaries
-      && state.currentItem - props.itemPerMove < 0
-      && state.currentItem > 0
-    ) {
-      state.currentItem = 0
+    if (!props.noBoundaries && state.currentItem - props.itemPerMove < 0 && state.currentItem > 0) {
+      state.currentItem = 0;
     } else {
-      state.currentItem = state.currentItem - props.itemPerMove
+      state.currentItem -= props.itemPerMove;
     }
-    state.sliding = true
-    await new Promise(async resolve => transitionEndPromiseResolver = resolve)
-    await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)))
-    state.sliding = false
-    if (!noInfinite && state.currentItem <= - props.itemPerSlide) {
-      state.disableTransition = true
-      state.currentItem = state.currentItem + totalItem.value
-      await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)))
-      await nextTick()
-      state.disableTransition = false
-    }  
-  }
-}
 
-const next = async (forceSlide?: boolean, noInfinite?: boolean) => {
-  if (
-    state.sliding && !forceSlide
-    || isBlockNext.value
-  ) {
-    return
+    state.sliding = true;
+    await new Promise<void>((resolve) => (transitionEndPromiseResolver = resolve));
+    await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+    state.sliding = false;
+
+    if (!noInfinite && state.currentItem <= -props.itemPerSlide) {
+      state.disableTransition = true;
+      state.currentItem += totalItem.value;
+      await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+      await nextTick();
+      state.disableTransition = false;
+    }
   }
+};
+
+const next = async (forceSlide?: boolean, noInfinite?: boolean): Promise<void> => {
+  if ((state.sliding && !forceSlide) || isBlockNext.value) return;
+
   if (state.currentItem <= totalItem.value - 1) {
     if (
-      !props.noBoundaries
-      && state.currentItem + props.itemPerMove > totalItem.value - 1 - props.itemPerMove
-      && state.currentItem + props.itemPerSlide < totalItem.value
-    ) { 
-      state.currentItem = totalItem.value - props.itemPerSlide
+      !props.noBoundaries &&
+      state.currentItem + props.itemPerMove > totalItem.value - 1 - props.itemPerMove &&
+      state.currentItem + props.itemPerSlide < totalItem.value
+    ) {
+      state.currentItem = totalItem.value - props.itemPerSlide;
     } else {
-      state.currentItem = state.currentItem + props.itemPerMove
+      state.currentItem += props.itemPerMove;
     }
-    state.sliding = true
-    await new Promise(async resolve => transitionEndPromiseResolver = resolve)
-    await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)))
-    state.sliding = false
-    if (!noInfinite && state.currentItem > totalItem.value - 1 ) {
-      state.disableTransition = true
-      state.currentItem = state.currentItem - totalItem.value
-      await nextTick()
-      await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)))
-      state.disableTransition = false
-    }    
-  }
-}
 
-const goToSlide = (slide: number) => {
-  if (
-    state.sliding 
-    || slide === currentSlide.value
-  ) {
-    return
+    state.sliding = true;
+    await new Promise<void>((resolve) => (transitionEndPromiseResolver = resolve));
+    await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+    state.sliding = false;
+
+    if (!noInfinite && state.currentItem > totalItem.value - 1) {
+      state.disableTransition = true;
+      state.currentItem -= totalItem.value;
+      await nextTick();
+      await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+      state.disableTransition = false;
+    }
   }
+};
+
+const goToSlide = (slide: number): void => {
+  if (state.sliding || slide === currentSlide.value) return;
+
   if (
-    slide < currentSlide.value
-    && state.currentItem - props.itemPerMove < 0
-    && state.currentItem > 0
+    slide < currentSlide.value &&
+    state.currentItem - props.itemPerMove < 0 &&
+    state.currentItem > 0
   ) {
-    state.currentItem = 0
+    state.currentItem = 0;
   } else if (
-    slide > currentSlide.value
-    && state.currentItem + props.itemPerMove > totalItem.value - 1 - props.itemPerMove
-    && state.currentItem + props.itemPerSlide < totalItem.value
+    slide > currentSlide.value &&
+    state.currentItem + props.itemPerMove > totalItem.value - 1 - props.itemPerMove &&
+    state.currentItem + props.itemPerSlide < totalItem.value
   ) {
-    state.currentItem = totalItem.value - props.itemPerSlide
+    state.currentItem = totalItem.value - props.itemPerSlide;
   } else {
-    currentSlide.value = slide
-  }  
-  state.sliding = true
-  setTimeout(async () => {
-    state.sliding = false    
-  }, 500)   
-}
-
-const isDotActive = (index: number) => {
-  let currentDisplaySlide;
-  if (currentSlide.value < 0) {
-    currentDisplaySlide = totalSlide.value - 1
-  } else if (currentSlide.value > totalSlide.value - 1) {
-    currentDisplaySlide = 0
-  } else {
-    currentDisplaySlide = currentSlide.value
+    currentSlide.value = slide;
   }
-  
-  return index === currentDisplaySlide
-}
 
-const getLoopIndex = (arr: any[], index: number) => {  
-  let _index = index % arr.length
-  _index = _index >= 0 ? _index : arr.length + _index
-  return arr[_index]
-}
+  state.sliding = true;
+  setTimeout(() => {
+    state.sliding = false;
+  }, 500);
+};
 
-let touchStartPosition = 0;
-let touchDistant = 0;
+const isDotActive = (index: number): boolean => {
+  const currentDisplaySlide = currentSlide.value < 0
+    ? totalSlide.value - 1
+    : currentSlide.value > totalSlide.value - 1
+      ? 0
+      : currentSlide.value;
 
-const onTouchEnd = () => {
-  //const distant = touchStartPosition + event.touches[0].clientX
-  console.log('onTouchEnd', touchDistant);
-  state.disableTransition = false
-  state.translateXOnTouch = 0
-  if (touchDistant > 0) {
-    prev(true, false)
-  } else {
-    next(true, false)
-  }
-  window.removeEventListener('touchmove', onTouchMove)
-  window.removeEventListener('touchend', onTouchEnd)
-}
+  return index === currentDisplaySlide;
+};
 
-const onTouchMove = (event: any) => {
-  touchDistant = event.touches[0].clientX - touchStartPosition
-  state.disableTransition = true
-  state.translateXOnTouch = touchDistant
-  window.addEventListener('touchend', onTouchEnd)
-}
+const getLoopIndex = <T>(arr: T[], index: number): T => {
+  let _index = index % arr.length;
+  _index = _index >= 0 ? _index : arr.length + _index;
+  return arr[_index];
+};
 
-const onTouchStart = (event: any) => {
-  console.log('onTouchStart');
-  if (
-    state.sliding
-    && 
-    props.infiniteOnWipe
-  ) {
-    return
-  }
-  touchStartPosition = event.touches[0].clientX
-  window.addEventListener('touchmove', onTouchMove)
-}
+// Touch handling
+let touchStartPosition: number = 0;
+let touchDistant: number = 0;
 
-watch(() => state.currentItem, (to) => {
-  emit('itemChange', to)
-})
+const onTouchEnd = (): void => {
+  state.disableTransition = false;
+  state.translateXOnTouch = 0;
+  touchDistant > 0 ? prev(true, false) : next(true, false);
+  window.removeEventListener('touchmove', onTouchMove);
+  window.removeEventListener('touchend', onTouchEnd);
+};
 
-watch(currentSlide, (to) => {
-  emit('slideChange', to)
-})
+const onTouchMove = (event: TouchEvent): void => {
+  touchDistant = event.touches[0].clientX - touchStartPosition;
+  state.disableTransition = true;
+  state.translateXOnTouch = touchDistant;
+};
 
+const onTouchStart = (event: TouchEvent): void => {
+  if (state.sliding && props.infiniteOnWipe) return;
+  touchStartPosition = event.touches[0].clientX;
+  window.addEventListener('touchmove', onTouchMove);
+  window.addEventListener('touchend', onTouchEnd);
+};
+
+// Watchers
+watch(() => state.currentItem, (to) => emit('itemChange', to));
+watch(currentSlide, (to) => emit('slideChange', to));
+
+// Lifecycle hooks
 onMounted(async () => {
-  if (viewportRef?.value) {
-    state.viewportWidth = viewportRef.value?.getBoundingClientRect().width
+  if (viewportRef.value) {
+    state.viewportWidth = viewportRef.value.getBoundingClientRect().width;
   }
-  await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)))
-  state.disableTransition = false
+
+  await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+  state.disableTransition = false;
+
   if (viewportRef.value) {
     const resizeObserver = new ResizeObserver((entries) => {
       for (const entry of entries) {
-        state.viewportWidth =entry.target?.getBoundingClientRect().width
+        state.viewportWidth = entry.target.getBoundingClientRect().width;
       }
     });
     resizeObserver.observe(viewportRef.value);
   }
-  window.addEventListener('touchstart', onTouchStart)
+
+  window.addEventListener('touchstart', onTouchStart);
+
   if (props.autoplay) {
-    state.autoplayInterval = setInterval(() => {
-      props.autoplayDirection === 'forward' ? next() : prev()
-    }, props.autoplayInterval)
+    state.autoplayInterval = window.setInterval(
+      () => props.autoplayDirection === 'forward' ? next() : prev(),
+      props.autoplayInterval
+    );
   }
-})
+});
 
 onUnmounted(() => {
-  clearInterval(state.autoplayInterval)
-})
-
+  clearInterval(state.autoplayInterval);
+  window.removeEventListener('touchstart', onTouchStart);
+});
 </script>
 
 <template>
