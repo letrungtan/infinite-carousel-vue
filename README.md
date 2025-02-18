@@ -2,7 +2,7 @@
 
 A flexible, lightweight, touch & wipe support carousel library for Vue 3, supporting infinite loop mode.
 
-<img src="https://raw.githubusercontent.com/letrungtan/infinite-carousel-vue/refs/heads/main/src/assets/t-carousel.webp" width="500" />
+<img src="https://raw.githubusercontent.com/letrungtan/infinite-carousel-vue/refs/heads/main/src/assets/t-carousel.svg" width="500" />
 
 ## Installation
 ### NPM
