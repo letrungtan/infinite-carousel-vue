@@ -383,19 +383,19 @@ onUnmounted(() => {
     }
     &-nav-left, &-nav-right {
       position: absolute;
-      background: #00000077;
+      background: #00000055;
       color: #FFFFFF;
       border-radius: 50%;
       cursor: pointer;
       user-select: none;
-      width: max(25px, min(40px, 7.5vw));
-      height: max(25px, min(40px, 7.5vw));
+      width: max(25px, min(40px, 6%));
+      aspect-ratio: 1/1;
       display: flex;
       align-items: center;
       justify-content: center;
       svg {
-        width: 50%;
-        height: 50%;
+        width: 45%;
+        height: 45%;
       }
       &.is-disable {
         opacity: 0.5;
