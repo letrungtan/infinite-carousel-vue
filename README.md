@@ -24,7 +24,7 @@ import { InfiniteCarousel, Slide } from 'infinite-carousel-vue'
     infiniteOnWipe
 >
     <Slide 
-        v-for="(item, index) in ['Item 1, Item 2, Item 3']"
+        v-for="(item, index) in ['Item 1', 'Item 2', 'Item 3']"
         :key="index"
     >
         {{ item }}
@@ -39,7 +39,8 @@ import { InfiniteCarousel, Slide } from 'infinite-carousel-vue'
 | `itemPerSlide`      | `Number`   | 1          | The number of items to show per slide.  |
 | `itemPerMove`       | `Number`   | 1          | The number of items to move per slide when navigating.  |
 | `duration`          | `Number`   | 500        | The duration of the transition in milliseconds.  |
-| `className`         | `String`   | ''         | Optional CSS class to add custom styling to the carousel container  |
+| `height`            | `String`   | ''         | Specifies the height of the carousel viewport.  |
+| `className`         | `String`   | ''         | Optional CSS class to add custom styling to the carousel container.  |
 | `showPagination`    | `Boolean`  | true       | Determines whether dot pagination controls should be visible.  |
 | `showNavigation`    | `Boolean`  | true       | Controls whether navigation arrows (previous/next) are displayed.  |
 | `infinite`          | `Boolean`  | true       | Enables infinite scrolling. When true, the carousel will loop back to the first slide after reaching the last and vice versa.  |

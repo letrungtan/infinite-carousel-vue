@@ -16,6 +16,7 @@ interface Props {
   autoplay?: boolean;
   autoplayInterval?: number;
   autoplayDirection?: 'forward' | 'backward';
+  height?: string
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -31,6 +32,7 @@ const props = withDefaults(defineProps<Props>(), {
   autoplay: false,
   autoplayInterval: 2000,
   autoplayDirection: 'forward',
+  height: ''
 });
 
 const emit = defineEmits<{
@@ -80,6 +82,13 @@ const trackStyle = computed(() => {
   return {
     transform: `translate3D(${translateX}px, 0, 0)`,
     transition: state.disableTransition ? 'none' : `${props.duration / 1000}s`,
+  };
+});
+
+const viewportStyle = computed(() => {  
+  return {
+    aspectRatio: !props.height ? '16/9' : 'unset',
+    height: !props.height ? 'unset' : props.height
   };
 });
 
@@ -261,6 +270,7 @@ onUnmounted(() => {
   <div class="t-carousel" :class="props.className">
     <div
      class="t-carousel-viewport"
+     :style="viewportStyle"
      ref="viewportRef"
     >
       <div 
@@ -344,6 +354,7 @@ onUnmounted(() => {
       justify-content: center;
       width: 100%;
       height: 100%;
+      aspect-ratio: 16 / 9;
       overflow: hidden;
     }
     &-track {
@@ -415,7 +426,7 @@ onUnmounted(() => {
     }
     &-nav-left {
       left: 25px;
-      transform: rotate(-90deg);      
+      transform: rotate(-90deg);
     }
     &-nav-right {
       right: 25px;
